@@ -44,7 +44,7 @@ class Vision:
             # Determine the center position
             center_x = x + int(self.bobber_w/2)
             center_y = y + int(self.bobber_h/2)
-            return(center_x, center_y)
+            return ((center_x, center_y), max_val)
 
     def draw_rectangle(self, haystack_img, rectangle):
         line_color = (0, 255, 0)
