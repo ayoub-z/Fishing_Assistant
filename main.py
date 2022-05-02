@@ -29,7 +29,7 @@ def draw_rectangle(threshold):
 
     if position != None: # if target is located inside screenshot
         # draw green rectangle inside screenshot and display it
-        output_image = vision_bobber.draw_rectangle(screenshot, position)
+        output_image = vision_bobber.draw_rectangle(screenshot, position[0])
         cv.imshow('Fish_bot', screenshot)
         if cv.waitKey(1) == ord('q'): 
             cv.destroyAllWindows()
@@ -46,14 +46,27 @@ def draw_rectangle(threshold):
 def cast_rod(key_to_press):
     pyautogui.press(key_to_press)            
 
-def fish_caught(position):
+def fish_caught(confidence, last_confidences):
     '''
     When fish is caught, the bobber dips. 
     When bobber dips, we don't recognize it anymore.
     And when we don't recognize it, a None is returned instead. 
     So we simply check for that None.
     '''
-    return True if position == None else False
+    if confidence == None: # if we can't locate the bobber anymore
+        return True
+
+    if len(last_confidences) >= 1:
+        confidence_threshold = (sum(last_confidences) / len(last_confidences) * 0.9) # 90% of the avg of the last 5
+
+        # if we have checked at least one screenshot
+        # and if the current confidence is lower than what it's threshold allows
+        # i.e. avg confidence is 0.8, but now it dipped to 0.7,
+        # that means the bobber dipped into the water and we can still detect it, just not fully
+        if confidence <= confidence_threshold:
+            print("confidence dropped from the average", (round((sum(last_confidences) / len(last_confidences)),2 )),
+                "to:", (round(confidence, 2)))
+            return True
 
 def reel_in_fish(last_pos):
     try:
@@ -62,26 +75,39 @@ def reel_in_fish(last_pos):
     except:
         pass
 
-win_to_capture = WindowCapture('World of Warcraft')
-vision_bobber = Vision('bobber.png')
+bobber = 'bobber_dragonblight.png'
 
-last_pos = 0
+win_to_capture = WindowCapture('World of Warcraft')
+vision_bobber = Vision('bobber_dragonblight.png')
+
+threshold = 0.5
+
+if bobber == 'bobber_dragonblight.png':
+    threshold = 0.6
+
+previous_confidences = []
+last_position = None
 while(True):
     cast_rod('1') # '1' here indicates the button to be pressed to cast the rod
     print('casted rod')
 
-    sleep((0.2)) # wait a bit for bobber to be in place 
+    sleep((0.3)) # wait a bit for bobber to be in place 
     print('waiting for fish...')
 
     while(True): # wait until we catch fish
         # draw rectangle around target and return position of target.
-        position = draw_rectangle(0.70)
-        if fish_caught(position):
+        try:
+            position, confidence = draw_rectangle(threshold)
+        except: # if we get error that None isn't subscribtable..
+            position, confidence = (None, None)
+        if fish_caught(confidence, previous_confidences):
             print('fish caught!!')
+            previous_confidences = []
             break
-        last_pos = position
+        last_position = position
+        previous_confidences.append(confidence)
 
-    reel_in_fish(last_pos)
+    reel_in_fish(last_position)
     print('taking short rest.. \n')
 
     # sleep for a bit to let old bobber disappear.
