@@ -49,9 +49,9 @@ def cast_rod(key_to_press):
 def fish_caught(confidence, last_confidences):
     '''
     When fish is caught, the bobber dips. 
-    When bobber dips, we don't recognize it anymore.
-    And when we don't recognize it, a None is returned instead. 
-    So we simply check for that None.
+    When bobber dips, we either completely don't recognize it anymore or the confidence drops.
+    So we check for a confidence of None or 
+    a confidence that's quite a bit lower compared to the previous ones.
     '''
     if confidence == None: # if we can't locate the bobber anymore
         return True
@@ -64,18 +64,21 @@ def fish_caught(confidence, last_confidences):
         # i.e. avg confidence is 0.8, threshold (90%) becomes 0.72, but the confidence is actually 0.7
         # then that means the bobber dipped into the water and we most likely caught a fish
         if confidence < confidence_threshold:
-            print("confidence dropped from the average", (round((sum(last_confidences) / len(last_confidences)),2 )),
-                "to:", (round(confidence, 2)))
+            # print("confidence dropped from the average", (round((sum(last_confidences) / len(last_confidences)),2 )),
+            #     "to:", (round(confidence, 2)))
             return True
 
 def reel_in_fish(last_pos):
     try:
-        pyautogui.moveTo((last_pos[0] - 8), (last_pos[1] + 30), duration=random.uniform(0.3, 1.5), tween=pyautogui.easeInOutQuad)
+        # last_pos contains the x and y coordinates of the bobber
+        # we subtract 15 pixels from the x and add 20 pixel to the y position,
+        # in order to get the center of the bobber for our mouse to click on
+        pyautogui.moveTo((last_pos[0] - 15), (last_pos[1] + 20), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
         pyautogui.click(button= "right")
-    except:
+    except: # in case the coordinates are None
         pass
 
-bobber = 'images/grizzly_hills_east.png'
+bobber = 'images/bobber_dragonblight.png'
 
 win_to_capture = WindowCapture('World of Warcraft')
 vision_bobber = Vision(bobber)
@@ -83,44 +86,54 @@ vision_bobber = Vision(bobber)
 # default threshold
 threshold = 0.6
 
-if bobber == 'images/bobber_dragonblight.png':
-    threshold = 0.7
+# if bobber == 'images/bobber_dragonblight.png':
+#     threshold = 0.7
 if bobber == 'images/grizzly_hills_east.png':
-    threshold = 0.62
+    threshold = 0.621
+if bobber == 'images/bobber_stormwind.png':
+    threshold = 0.64   
 
+
+
+fish_count = 0
 previous_confidences = []
 last_position = None
 print("Threshold: ", threshold)
 while(True):
+    # sleep for a bit to have time to cast out fishing line
+    # and sleep at the start before every cast to let old fishing bobber disappear. 
+    # with some randomness to show some human like behavior
+    # sleep(random.uniform(3, 4.5)) 
+    sleep(random.uniform(0.3, 1)) 
+
     cast_rod('1') # '1' here indicates the button to be pressed to cast the rod
-    print('casted rod') 
+    sleep((0.25)) # wait for bobber to be in water, before we 1try to detect it
 
-    sleep((0.3)) # wait a bit for bobber to be in place 
-    print('waiting for fish...')
-
+    print('Line is out, waiting for fish to bite..')
+    animation = "|/-\\" # loading animation 
+    idx = 0
     while(True): # wait until we catch fish
         # draw rectangle around target
         # and return position and confidence of target
+        loop_time = time()
         data = draw_rectangle(threshold)
+        
+        print(animation[idx % len(animation)], end="\r") # print a loading animation
+        idx += 1     
 
+        # print('FPS {}'.format(1 / (time() - loop_time)))
         if data != None:
             position, confidence = data
         else:
             position, confidence = (None, None)
+
         if fish_caught(confidence, previous_confidences):
-            print('fish caught!!')
             previous_confidences = []
             break
         last_position = position
         previous_confidences.append(confidence)
 
+    fish_count += 1
+    print(f"Fish on hook! \nFish caught so far: {fish_count}\n")
     reel_in_fish(last_position)
     last_position = None
-    print('taking short rest.. \n')
-
-    # sleep for a bit to let old bobber disappear.
-    # with some randomness to show some human like behavior
-    sleep(random.uniform(3, 4.5)) 
-
-    # print('FPS {}'.format(1 / (time() - loop_time)))
-    # loop_time = time()
