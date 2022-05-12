@@ -32,14 +32,7 @@ class Vision:
 
         # print("Confidence: ", round(max_val, 2))
         if max_val >= threshold:
-            
-            marker_color = (255,0, 255)
-            marker_type = cv.MARKER_CROSS
-            
             x, y = max_loc
-
-            # marker_color = (255, 0, 255)
-            # marker_type = cv.MARKER_CROSS
 
             # Determine the center position
             center_x = x + int(self.bobber_w/2)
@@ -57,15 +50,3 @@ class Vision:
         cv.rectangle(haystack_img, top_left, bottom_right, color=line_color, 
                     lineType=line_type, thickness=2)
         return haystack_img
-        
-        
-    #     elif debug_mode == 'points':
-    #         # Draw the center point
-    #         cv.drawMarker(haystack_img, (center_x, center_y), 
-    #                     color=marker_color, markerType=marker_type, 
-    #                     markerSize=40, thickness=2)
-
-    #     if debug_mode:
-    #         cv.imshow('Matches', haystack_img)
-    #         #cv.waitKey()
-    #         #cv.imwrite('result_click_point.jpg', haystack_img)
