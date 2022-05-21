@@ -24,13 +24,13 @@ class Vision:
         # TM_CCOEFF, TM_CCOEFF_NORMED, TM_CCORR, TM_CCORR_NORMED, TM_SQDIFF, TM_SQDIFF_NORMED
         self.method = method
 
-    def find(self, haystack_img, threshold=0.5, debug_mode=None):
+    def find(self, haystack_img, threshold=0.5, debug_mode=False):
         result = cv.matchTemplate(haystack_img, self.bobber_img, self.method)
 
         # get the best match position
         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-
-        # print("Confidence: ", round(max_val, 2))
+        # if debug_mode:
+            # print("Confidence: ", round(max_val, 2))
         if max_val >= threshold:
             x, y = max_loc
 
