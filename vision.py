@@ -59,7 +59,7 @@ class Vision:
                 print('done')
                 quit()
 
-    def find(self, size_percentage, threshold=0.5, fish_bot=None, debug_mode=False):
+    def find(self, size_percentage, fish_bot, threshold=0.5, debug_mode=False, find_enemy=False):
         win_to_capture = WindowCapture('World of Warcraft')
         w = win_to_capture.w # window height
         h = win_to_capture.h # window width
@@ -82,6 +82,9 @@ class Vision:
         # |          Full window           |
         # |________________________________|
 
+        if find_enemy:
+            cropped_image = screenshot[int(h / 2 + h / 6.5) : int(h / 2 + h / 5), int(w / 4 + w / 3.25) : int((w / 1.45))]        
+
         result = cv.matchTemplate(cropped_image, self.bobber_img, self.method)
 
         # get the best match position
@@ -100,6 +103,15 @@ class Vision:
             center_x = x + int(self.bobber_w/2) + (w/6) 
             center_y = y + int(self.bobber_h/2) + (h/6)
             return ((center_x, center_y), max_val, cropped_image)
+
+    def find_enemy(self, size_percentage, fish_bot, threshold=0.5, debug_mode=False, find_enemy=True):
+        find_enemy = self.find(size_percentage, fish_bot, threshold, debug_mode, find_enemy)
+        if find_enemy != None:
+            cv.destroyAllWindows()
+            print("ENEMY SPOTTED")
+            fish_bot.fishing = False
+            fish_bot.emergency_escape()
+            quit()
 
     def draw_rectangle(self, haystack_img, rectangle):
         line_color = (0, 255, 0)
