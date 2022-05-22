@@ -13,7 +13,7 @@ class FishBot:
     last_position = None
 
     failed_casts = 0
-    first_cast = True
+    first_screenshot = True
     fish_count = 0
     caught_fish = False
     fishing_lure = True
@@ -26,7 +26,7 @@ class FishBot:
 
     def cast_fishing_rod(self, key):
         self.press_key('1') # '1' here indicates the button to be pressed to cast the rod
-        sleep(0.25) # wait for bobber to be in water, before we 1try to detect it
+        sleep(0.25) # wait for bobber to be in water, before we try to detect it
 
     def press_key(self, key_to_press):
         pyautogui.press(key_to_press)            
@@ -39,9 +39,6 @@ class FishBot:
             sleep(2.3)
 
             self.lure_end_time += self.lure_duration
-            return True
-        else:
-            return False
 
     def fish_caught(self, confidence, last_confidences):
         '''
@@ -77,15 +74,15 @@ class FishBot:
                 return True
 
     def reel_in_fish(self):
-        try:
-            # last_pos contains the x and y coordinates of the bobber
-            # we subtract 15 pixels from the x and add 20 pixel to the y position,
-            # in order to get the center of the bobber for our mouse to click on
-            pyautogui.moveTo((self.last_position[0] - 15), (self.last_position[1] - 5), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
-            pyautogui.click(button= "right")
-            print(f"Fish on hook! \nFish caught so far: {self.fish_count}\n")
-        except: # in case the coordinates are None
-            pass
+        # try:
+        # last_pos contains the x and y coordinates of the bobber
+        # we subtract 15 pixels from the x and add 20 pixel to the y position,
+        # in order to get the center of the bobber for our mouse to click on
+        pyautogui.moveTo((self.last_position[0] - 15), (self.last_position[1] - 5), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
+        pyautogui.click(button= "right")
+        print(f"Fish on hook! \nFish caught so far: {self.fish_count}\n")
+        # except: # in case the coordinates are None
+        #     pass
 
     def emergency_escape(self):
         '''
@@ -100,17 +97,15 @@ class FishBot:
         self.press_key('f6') # second press allows character to fly
         sleep(random.uniform(0.01, 0.04))
 
-        with pyautogui.hold('space'):
-            with pyautogui.hold('w'):
+        with pyautogui.hold('space'): # while holding down 'space' key
+            with pyautogui.hold('w'): # while holding down 'w' key
                 sleep(0.01)
-                # pixels = random.uniform(1, 3)
-                # drag_time = random.uniform(0.12, 0.18)
-                pyautogui.drag(2, 0, 0.12, button='right')
-                sleep(random.uniform(15, 20))
-
-        # pyautogui.keyDown("w") # hold down the 'w' key to fly forward for x amount of time
-        # sleep(random.uniform(5, 8)) 
-        # pyautogui.keyUp("w")     
+                
+                # slightly drag the mouse to the left, while holding the right mouse button.
+                # this let's the character do a 180 degree turn as it flies away,
+                # making it harder for enemy players to keep track of the character
+                pyautogui.drag(2, 0, 0.12, button='right') 
+                sleep(random.uniform(15, 20))  
 
     def shut_down(self):      
         print("Shutting down...")
@@ -130,40 +125,43 @@ class FishBot:
                 position, confidence = bobber_data[:2]
             else:
                 position, confidence = (None, None)
-                if self.first_cast == True: # if on the very first cast we were unable to locate the bobber
+                if self.first_screenshot == True: # if on the very detection screenshot we were unable to locate the bobber
                     print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
                     break
 
-            print(animation[idx % len(animation)], end="\r") # print a loading animation
-            idx += 1
-
-            # if on the very first cast we were unable to locate the bobber
-            if confidence == None and self.first_cast == True:
+            # if on the very first detection screenshot we were unable to locate the bobber
+            if confidence == None and self.first_screenshot == True:
                 print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
                 break
 
-            self.first_cast = False
+            self.first_screenshot = False
+
+            # if we caught a fish
             if self.fish_caught(confidence, self.previous_confidences):
                 self.caught_fish = True
                 self.fish_count += 1  
                 self.previous_confidences = []              
                 break
 
+            # if we didn't catch a fish, update the last bobber position
+            # update the "previous_confidences" list
             self.last_position = position
             self.previous_confidences.append(confidence) 
 
         if self.failed_casts >= 10: # if we were unable to detect a bobber 10 times in a row
             print("Unable to detect bobber after 10 consecutive tries")
             self.shut_down() # shut down the bot
-            
-        if self.first_cast == True: # a "failed cast", meaning we didn't detect bobber, only applies if it's the very first cast
+        # a "failed cast", meaning we didn't detect bobber, 
+        # only applies if it's the very first screenshot to detect the bobber 
+        if self.first_screenshot == True: 
             self.failed_casts += 1
 
     def start_fishing(self, threshold, vision_bobber):
         while(self.fishing):
             # small pauze before we start/after we caught fish
-            sleep(random.uniform(0.3, 2)) 
-            self.first_cast = True       
+            sleep(random.uniform(0.3, 2))
+
+            self.first_screenshot = True     
             self.caught_fish = False    
 
             self.apply_lure('2') # '2' key is here bound to applying the lure
