@@ -9,6 +9,17 @@ from time import time, sleep
 class FishBot:
     fishing = True
 
+    previous_confidences = []
+    last_position = None
+
+    failed_casts = 0
+    first_cast = True
+    fish_count = 0
+    caught_fish = False
+    fishing_lure = True
+    lure_duration = 600 # seconds
+    lure_end_time = time()
+
     def detect_bobber(self, threshold, vision):
         bobber_data = vision.find(self, threshold)       
         return bobber_data
@@ -20,12 +31,14 @@ class FishBot:
     def press_key(self, key_to_press):
         pyautogui.press(key_to_press)            
 
-    def apply_lure(self, key, lure_end_time=time()-600):
-        if time() >= lure_end_time:
+    def apply_lure(self, key):
+        if time() >= self.lure_end_time:
             sleep(0.1)
             self.press_key(key)
             print("Applying fishing lure")
             sleep(2.3)
+
+            self.lure_end_time += self.lure_duration
             return True
         else:
             return False
@@ -63,13 +76,14 @@ class FishBot:
                 #     "to:", (round(confidence, 2)))
                 return True
 
-    def reel_in_fish(self, last_pos):
+    def reel_in_fish(self):
         try:
             # last_pos contains the x and y coordinates of the bobber
             # we subtract 15 pixels from the x and add 20 pixel to the y position,
             # in order to get the center of the bobber for our mouse to click on
-            pyautogui.moveTo((last_pos[0] - 15), (last_pos[1] - 5), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
+            pyautogui.moveTo((self.last_position[0] - 15), (self.last_position[1] - 5), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
             pyautogui.click(button= "right")
+            print(f"Fish on hook! \nFish caught so far: {self.fish_count}\n")
         except: # in case the coordinates are None
             pass
 
@@ -79,91 +93,85 @@ class FishBot:
         character to fly away.
         '''
         print("Activating EMERGENCY ESCAPE")
+        # self.press_key('h') # presses the 'F6' key to turn character invisible
+        # sleep(random.uniform(0.01, 0.03))        
         self.press_key('f6') # presses the 'F6' key to turn character invisible
-        sleep(0.1)
+        sleep(random.uniform(0.01, 0.02))
         self.press_key('f6') # second press allows character to fly
-        sleep(0.1)
+        sleep(random.uniform(0.01, 0.04))
 
-        pyautogui.keyDown("space") # hold down the 'space' to fly up for x seconds
-        sleep(random.uniform(5, 8)) 
-        pyautogui.keyUp("space")
+        with pyautogui.hold('space'):
+            with pyautogui.hold('w'):
+                sleep(0.01)
+                # pixels = random.uniform(1, 3)
+                # drag_time = random.uniform(0.12, 0.18)
+                pyautogui.drag(2, 0, 0.12, button='right')
+                sleep(random.uniform(15, 20))
 
-        pyautogui.keyDown("d") # hold down the 'd' turn right for x amount of time
-        sleep(random.uniform(0.3, 1)) 
-        pyautogui.keyUp("d")
-
-        pyautogui.keyDown("w") # hold down the 'w' key to fly forward for x amount of time
-        sleep(random.uniform(5, 8)) 
-        pyautogui.keyUp("w")     
+        # pyautogui.keyDown("w") # hold down the 'w' key to fly forward for x amount of time
+        # sleep(random.uniform(5, 8)) 
+        # pyautogui.keyUp("w")     
 
     def shut_down(self):      
         print("Shutting down...")
         cv.destroyAllWindows()
         quit()   
 
-    def start_fishing(self, vision_bobber, threshold):
-        stop_program = False
-        previous_confidences = []
-        last_position = None
-
-        failed_casts = 0
-        fish_count = 0
-        fishing_lure = True
-        lure_duration = 600 # seconds
-        lure_end_time = time() 
-
+    def wait_for_fish(self, threshold, vision_bobber):
+        print('Line is out, waiting for fish to bite..')
+        animation = "|/-\\" # loading animation 
+        idx = 0
         while(self.fishing):
-            # small pauze before we start/after we caught fish
-            sleep(random.uniform(0.3, 2)) 
-            first_cast = True           
+            bobber_data = self.detect_bobber(threshold, vision_bobber)
 
-            if self.apply_lure('2', lure_end_time):
-                lure_end_time += lure_duration
-            self.cast_fishing_rod('1')
-
-            print('Line is out, waiting for fish to bite..')
-            animation = "|/-\\" # loading animation 
-            idx = 0
-            while(self.fishing):
-                bobber_data = self.detect_bobber(threshold, vision_bobber)
-                # print(bobber_data)
-                print(animation[idx % len(animation)], end="\r") # print a loading animation
-                idx += 1     
-
-                if bobber_data != None: # if we can locate the bobber's
-                    position, confidence = bobber_data[:2]
-                else:
-                    position, confidence = (None, None)
-                    if first_cast == True: # if on the very first cast we were unable to locate the bobber
-                        print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
-                        break
-
-                print(animation[idx % len(animation)], end="\r") # print a loading animation
-                idx += 1
-
-                # if on the very first cast we were unable to locate the bobber
-                if confidence == None and first_cast == True:
+            print(animation[idx % len(animation)], end="\r") # print a loading animation
+            idx += 1     
+            if bobber_data != None: # if we can locate the bobber
+                position, confidence = bobber_data[:2]
+            else:
+                position, confidence = (None, None)
+                if self.first_cast == True: # if on the very first cast we were unable to locate the bobber
                     print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
                     break
 
-                first_cast = False
-                if self.fish_caught(confidence, previous_confidences):
-                    previous_confidences = []
-                    break
-                last_position = position
-                previous_confidences.append(confidence)
-    
-            if failed_casts >= 10: # if we were unable to detect a bobber 10 times in a row
-                print("Unable to detect bobber after 10 consecutive tries")
-                self.shut_down() # shut down the program
-                
-            if first_cast == True: # a "failed cast", meaning we didn't detect bobber, only applies if it's the very first cast
-                failed_casts += 1
-                continue    
+            print(animation[idx % len(animation)], end="\r") # print a loading animation
+            idx += 1
 
-            fish_count += 1
-            self.reel_in_fish(last_position)
-            print(f"Fish on hook! \nFish caught so far: {fish_count}\n")
+            # if on the very first cast we were unable to locate the bobber
+            if confidence == None and self.first_cast == True:
+                print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
+                break
 
-            last_position = None
-            failed_casts = 0
+            self.first_cast = False
+            if self.fish_caught(confidence, self.previous_confidences):
+                self.caught_fish = True
+                self.fish_count += 1  
+                self.previous_confidences = []              
+                break
+
+            self.last_position = position
+            self.previous_confidences.append(confidence) 
+
+        if self.failed_casts >= 10: # if we were unable to detect a bobber 10 times in a row
+            print("Unable to detect bobber after 10 consecutive tries")
+            self.shut_down() # shut down the bot
+            
+        if self.first_cast == True: # a "failed cast", meaning we didn't detect bobber, only applies if it's the very first cast
+            self.failed_casts += 1
+
+    def start_fishing(self, threshold, vision_bobber):
+        while(self.fishing):
+            # small pauze before we start/after we caught fish
+            sleep(random.uniform(0.3, 2)) 
+            self.first_cast = True       
+            self.caught_fish = False    
+
+            self.apply_lure('2') # '2' key is here bound to applying the lure
+            self.cast_fishing_rod('1') # and the '1' to casting out the fishing line
+
+            self.wait_for_fish(threshold, vision_bobber) # wait until a fish is caught
+            if self.caught_fish:
+                self.reel_in_fish()
+
+                self.last_position = None
+                self.failed_casts = 0
