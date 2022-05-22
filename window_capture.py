@@ -1,9 +1,14 @@
+import mss
 import numpy as np
-import win32gui, win32ui, win32con
+import win32gui
+import cv2 as cv
 
 class WindowCapture:
+    left = 0
+    top = 0
     w = 0 # window width
     h = 0 # window height
+
     hwnd = None 
     cropped_x = 0
     cropped_y = 0
@@ -40,36 +45,18 @@ class WindowCapture:
         self.offset_y = window_rect[1] + self.cropped_y
 
     def get_screenshot(self):
-        # get the window image data
-        wDC = win32gui.GetWindowDC(self.hwnd)
-        dcObj=win32ui.CreateDCFromHandle(wDC)
-        cDC=dcObj.CreateCompatibleDC()
-        dataBitMap = win32ui.CreateBitmap()
-        dataBitMap.CreateCompatibleBitmap(dcObj, self.w, self.h)
-        cDC.SelectObject(dataBitMap)
-        cDC.BitBlt((0,0),(self.w, self.h) , dcObj, (self.cropped_x, self.cropped_y), win32con.SRCCOPY)
+        stc = mss.mss()
+        scr = stc.grab({
+            'left': self.left,
+            'top': self.top,
+            'width': self.w,
+            'height': self.h
+        })
 
-        # save screenshot
-        signedIntsArray = dataBitMap.GetBitmapBits(True)
-        img = np.fromstring(signedIntsArray, dtype='uint8')
-        img.shape = (self.h, self.w, 4)
-
-        # Free Resources
-        dcObj.DeleteDC()
-        cDC.DeleteDC()
-        win32gui.ReleaseDC(self.hwnd, wDC)
-        win32gui.DeleteObject(dataBitMap.GetHandle())
-
-        img = img[...,:3]
-
-        img = np.ascontiguousarray(img)
+        img = np.array(scr)
+        img = cv.cvtColor(img, cv.IMREAD_COLOR)
 
         return img
 
-
-    # translate a pixel position on a screenshot image to a pixel position on the screen.
-    # pos = (x, y)
-    # WARNING: if you move the window being captured, this will return incorrect coordinates, 
-    # because the window position is only calculated in the __init__ constructor.
     def get_screen_position(self, pos):
-        return (pos[0] + self.offset_x, pos[1] + self.offset_y)
+        return (pos[0] + self.offset_x, pos[1] + self.offset_y)    
