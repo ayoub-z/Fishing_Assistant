@@ -76,14 +76,26 @@ class Vision:
         # The cropped image would be the square box of the full window, as shown below
         #  ________________________________
         # |     ______________________     |
-        # |    |      Quare box       |    |
+        # |    |     Fishing area     |    |
         # |    |______________________|    |
         # |                                |
         # |          Full window           |
         # |________________________________|
 
+        # these coordinates are slightly more complex.
+        # in summary, it's to find a small enemy frame inside the window. 
+        # Got the exact coordinates through trial and error
         if find_enemy:
             cropped_image = screenshot[int(h / 2 + h / 6.5) : int(h / 2 + h / 5), int(w / 4 + w / 3.25) : int((w / 1.45))]        
+
+        # the enemy frame would be around here
+        #  ________________________________
+        # |                                |
+        # |             #Enemy frame       |
+        # |                   ___          |
+        # |                  |___|         |
+        # |                                |
+        # |________________________________|
 
         result = cv.matchTemplate(cropped_image, self.bobber_img, self.method)
 
