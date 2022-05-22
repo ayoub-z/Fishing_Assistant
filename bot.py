@@ -10,40 +10,12 @@ class FishBot:
     fishing = True
 
     def detect_bobber(self, threshold, vision):
-        bobber_data = vision.find(threshold)       
+        bobber_data = vision.find(self, threshold)       
         return bobber_data
 
     def cast_fishing_rod(self, key):
         self.press_key('1') # '1' here indicates the button to be pressed to cast the rod
         sleep(0.25) # wait for bobber to be in water, before we 1try to detect it
-
-    def detect_error(self, vision, screenshot):
-        position = vision.find(screenshot, 0.6)
-
-        if position != None: # if target is located inside screenshot
-            print("Removing annoying addon error")
-            self.press_key('esc')       
-
-    def detect_enemy(self, vision, screenshot):
-        position = vision.find(screenshot, 0.6)
-
-        if position != None: # if target is located inside screenshot
-            output_image = vision.draw_rectangle(screenshot, position[0])
-            cv.imshow('Fish_bot', output_image)
-            if cv.waitKey(1) == ord('q'): 
-                cv.destroyAllWindows()
-                print('done')
-                quit()        
-            print("ENEMY SPOTTED!!!")
-            sleep(0.05)
-            self.emergency_escape() # escape
-            self.shut_down() # shut down program  
-        else: # if target isn't located, display the normal screenshot
-            cv.imshow('Fish_bot', screenshot)
-            if cv.waitKey(1) == ord('q'): 
-                cv.destroyAllWindows()
-                print('done')
-                quit()
 
     def press_key(self, key_to_press):
         pyautogui.press(key_to_press)            
@@ -126,6 +98,7 @@ class FishBot:
 
     def shut_down(self):      
         print("Shutting down...")
+        cv.destroyAllWindows()
         quit()   
 
     def start_fishing(self, vision_bobber, threshold):
@@ -144,8 +117,8 @@ class FishBot:
             sleep(random.uniform(0.3, 2)) 
             first_cast = True           
 
-            # if apply_lure('2', lure_end_time):
-            #     lure_end_time += lure_duration
+            if self.apply_lure('2', lure_end_time):
+                lure_end_time += lure_duration
             self.cast_fishing_rod('1')
 
             print('Line is out, waiting for fish to bite..')
@@ -166,11 +139,7 @@ class FishBot:
                         break
 
                 print(animation[idx % len(animation)], end="\r") # print a loading animation
-                idx += 1     
-
-                # confidence = vision_bobber.bobber_confidence
-                # position = vision_bobber.bobber_position
-
+                idx += 1
 
                 # if on the very first cast we were unable to locate the bobber
                 if confidence == None and first_cast == True:
