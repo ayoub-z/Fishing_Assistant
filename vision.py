@@ -31,33 +31,33 @@ class Vision:
         A smaller window pops up, displaying what the bot can see.
         If the bobber is detected, a green triangle is drawn around it
         and this is displayed inside the smaller window.'''
-            if max_val >= threshold: # if the fishing bobber is detected
-                x, y = max_loc 
+        if max_val >= threshold: # if the fishing bobber is detected
+            x, y = max_loc 
 
-                # Determine the center position            
-                center_x = x + int(self.bobber_w/2)
-                center_y = y + int(self.bobber_h/2)
+            # Determine the center position            
+            center_x = x + int(self.bobber_w/2)
+            center_y = y + int(self.bobber_h/2)
 
-                output_image = self.draw_rectangle(cropped_image, (center_x, center_y)) # draw triangle around the bobber
-                if size_percentage != 100: # if we want to resize the displayed image
-                    output_image = self.resize_image(output_image, size_percentage) # resize it
-                cv.imshow('Fish_bot', output_image) # display the result
-                cv.setWindowProperty('Fish_bot', cv.WND_PROP_TOPMOST, 1)
-                if cv.waitKey(1) == ord('q'): 
-                    cv.destroyAllWindows()
-                    fish_bot.fishing = False
-                    print('done')
-                    quit()
-            else: # if no bobber is detected
-                if size_percentage != 100:
-                    cropped_image = self.resize_image(cropped_image, size_percentage)
-                cv.imshow('Fish_bot', cropped_image) # display the normal image
-                cv.setWindowProperty('Fish_bot', cv.WND_PROP_TOPMOST, 1)
-                if cv.waitKey(1) == ord('q'): 
-                    cv.destroyAllWindows()
-                    fish_bot.fishing = False
-                    print('done')
-                    quit()
+            output_image = self.draw_rectangle(cropped_image, (center_x, center_y)) # draw triangle around the bobber
+            if size_percentage != 100: # if we want to resize the displayed image
+                output_image = self.resize_image(output_image, size_percentage) # resize it
+            cv.imshow('Fish_bot', output_image) # display the result
+            cv.setWindowProperty('Fish_bot', cv.WND_PROP_TOPMOST, 1)
+            if cv.waitKey(1) == ord('q'): 
+                cv.destroyAllWindows()
+                fish_bot.fishing = False
+                print('done')
+                quit()
+        else: # if no bobber is detected
+            if size_percentage != 100:
+                cropped_image = self.resize_image(cropped_image, size_percentage)
+            cv.imshow('Fish_bot', cropped_image) # display the normal image
+            cv.setWindowProperty('Fish_bot', cv.WND_PROP_TOPMOST, 1)
+            if cv.waitKey(1) == ord('q'): 
+                cv.destroyAllWindows()
+                fish_bot.fishing = False
+                print('done')
+                quit()
 
     def find(self, size_percentage, threshold=0.5, fish_bot=None, debug_mode=False):
         win_to_capture = WindowCapture('World of Warcraft')
