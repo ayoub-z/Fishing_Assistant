@@ -9,39 +9,8 @@ from time import time, sleep
 class FishBot:
     fishing = True
 
-    def detect_bobber(self, threshold, vision, screenshot, debug_mode=False):
-        '''
-        FUNCTION:
-        This function takes a screenshot of the main window, then tries 
-        to find your target (fishing bobber in this case) inside that screen shot.
-        Finally it draws a green rectangle around that bobber and returns
-        the exact position of where the bobber was found.
-
-        PARAMETER:
-        parameter is the confidence threshold of how strict we want 
-        the found object to be similar to our target.
-        if you put 0.99, you basically want an exact copy of your target,
-        and a 0.3 means it only needs to resemble it around 30%. 
-        you don't want it too low, otherwise it will recognize other 
-        areas of the window as the target.
-        0.67 worked for me.
-        '''
-        bobber_data = vision.find(screenshot, threshold, debug_mode)
-        if debug_mode:
-            if bobber_data != None: # if target is located inside screenshot
-                # draw green rectangle inside screenshot and display it
-                output_image = vision.draw_rectangle(screenshot, bobber_data[0])
-                cv.imshow('Fish_bot', output_image)
-                if cv.waitKey(1) == ord('q'): 
-                    cv.destroyAllWindows()
-                    print('done')
-                    quit()
-            else: # if target isn't located, display the normal screenshot
-                cv.imshow('Fish_bot', screenshot)
-                if cv.waitKey(1) == ord('q'): 
-                    cv.destroyAllWindows()
-                    print('done')
-                    quit()
+    def detect_bobber(self, threshold, vision):
+        bobber_data = vision.find(threshold)       
         return bobber_data
 
     def cast_fishing_rod(self, key):
@@ -97,12 +66,11 @@ class FishBot:
         a confidence that's quite a bit lower compared to the previous ones.
         '''
         if confidence == None: # if we can't locate the bobber anymore
-            print("Bobber below detect threshold")
             return True
 
         # if we have checked at least one screenshot before
         if len(last_confidences) >= 5:
-            confidence_threshold = (sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2]) * 0.90) # 90% of the avg of the previous confidences
+            confidence_threshold = (sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2]) * 0.88) # 88% of the avg of the previous confidences
             if confidence <= confidence_threshold:
                 # print("confidence dropped from the average", (round((sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2])),2 )),
                 #     "to:", (round(confidence, 2)))            
@@ -128,7 +96,7 @@ class FishBot:
             # last_pos contains the x and y coordinates of the bobber
             # we subtract 15 pixels from the x and add 20 pixel to the y position,
             # in order to get the center of the bobber for our mouse to click on
-            pyautogui.moveTo((last_pos[0] - 15), (last_pos[1] + 30), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
+            pyautogui.moveTo((last_pos[0] - 15), (last_pos[1] - 5), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
             pyautogui.click(button= "right")
         except: # in case the coordinates are None
             pass
@@ -157,7 +125,6 @@ class FishBot:
         pyautogui.keyUp("w")     
 
     def shut_down(self):      
-        cv.destroyAllWindows()
         print("Shutting down...")
         quit()   
 
@@ -172,64 +139,62 @@ class FishBot:
         lure_duration = 600 # seconds
         lure_end_time = time() 
 
-        win_to_capture = WindowCapture('World of Warcraft')
         while(self.fishing):
-                # small pauze before we start/after we caught fish
-                sleep(random.uniform(0.3, 1)) 
-                first_cast = True           
+            # small pauze before we start/after we caught fish
+            sleep(random.uniform(0.3, 2)) 
+            first_cast = True           
 
-                # if apply_lure('2', lure_end_time):
-                #     lure_end_time += lure_duration
-                self.cast_fishing_rod('1')
+            # if apply_lure('2', lure_end_time):
+            #     lure_end_time += lure_duration
+            self.cast_fishing_rod('1')
 
-                print('Line is out, waiting for fish to bite..')
-                animation = "|/-\\" # loading animation 
-                idx = 0
-                while(self.fishing):
-                    screenshot = win_to_capture.get_screenshot()
-                    data_bobber = self.detect_bobber(threshold, vision_bobber, screenshot)
+            print('Line is out, waiting for fish to bite..')
+            animation = "|/-\\" # loading animation 
+            idx = 0
+            while(self.fishing):
+                bobber_data = self.detect_bobber(threshold, vision_bobber)
+                # print(bobber_data)
+                print(animation[idx % len(animation)], end="\r") # print a loading animation
+                idx += 1     
 
-                    print(animation[idx % len(animation)], end="\r") # print a loading animation
-                    idx += 1     
-
-                    if data_bobber != None: # if we can locate the bobber's
-                        position, confidence = data_bobber 
-                    else:
-                        position, confidence = (None, None)
-                        if first_cast == True: # if on the very first cast we were unable to locate the bobber
-                            print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
-                            break
-
-                    print(animation[idx % len(animation)], end="\r") # print a loading animation
-                    idx += 1     
-
-                    # confidence = vision_bobber.bobber_confidence
-                    # position = vision_bobber.bobber_position
-
-
-                    # if on the very first cast we were unable to locate the bobber
-                    if confidence == None and first_cast == True:
+                if bobber_data != None: # if we can locate the bobber's
+                    position, confidence = bobber_data[:2]
+                else:
+                    position, confidence = (None, None)
+                    if first_cast == True: # if on the very first cast we were unable to locate the bobber
                         print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
                         break
 
-                    first_cast = False
-                    if self.fish_caught(confidence, previous_confidences):
-                        previous_confidences = []
-                        break
-                    last_position = position
-                    previous_confidences.append(confidence)
-        
-                if failed_casts >= 10: # if we were unable to detect a bobber 10 times in a row
-                    print("Unable to detect bobber after 10 consecutive tries")
-                    self.shut_down() # shut down the program
-                    
-                if first_cast == True: # a "failed cast", meaning we didn't detect bobber, only applies if it's the very first cast
-                    failed_casts += 1
-                    continue    
+                print(animation[idx % len(animation)], end="\r") # print a loading animation
+                idx += 1     
 
-                fish_count += 1
-                self.reel_in_fish(last_position)
-                print(f"Fish on hook! \nFish caught so far: {fish_count}\n")
+                # confidence = vision_bobber.bobber_confidence
+                # position = vision_bobber.bobber_position
 
-                last_position = None
-                failed_casts = 0
+
+                # if on the very first cast we were unable to locate the bobber
+                if confidence == None and first_cast == True:
+                    print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
+                    break
+
+                first_cast = False
+                if self.fish_caught(confidence, previous_confidences):
+                    previous_confidences = []
+                    break
+                last_position = position
+                previous_confidences.append(confidence)
+    
+            if failed_casts >= 10: # if we were unable to detect a bobber 10 times in a row
+                print("Unable to detect bobber after 10 consecutive tries")
+                self.shut_down() # shut down the program
+                
+            if first_cast == True: # a "failed cast", meaning we didn't detect bobber, only applies if it's the very first cast
+                failed_casts += 1
+                continue    
+
+            fish_count += 1
+            self.reel_in_fish(last_position)
+            print(f"Fish on hook! \nFish caught so far: {fish_count}\n")
+
+            last_position = None
+            failed_casts = 0
