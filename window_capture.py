@@ -18,7 +18,7 @@ class WindowCapture:
     def __init__(self, window_name=None):
         # if no window name is given, capture entire screen
         if window_name is None:
-            self.hwnd = wind32gui.GetDesktopWindow()
+            self.hwnd = win32gui.GetDesktopWindow()
         else:
             # find the handle for the window we want to capture
             self.hwnd = win32gui.FindWindow(None, window_name)
