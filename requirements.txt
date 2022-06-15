@@ -1,5 +1,5 @@
 opencv-python==4.5.5.64
 numpy==1.22.2
 PyAutoGUI==0.9.53
-pywin32==223
+pywin32==303
 mss==6.1.0
