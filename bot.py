@@ -19,14 +19,16 @@ class FishBot:
     fishing_lure = True
     lure_duration = 600 # seconds
     lure_end_time = time()
+    failed_casts_limit = 10
 
-    def detect_bobber(self, threshold, vision):
-        bobber_data = vision.find(self, threshold)       
+    def detect_bobber(self, threshold, vision, debug_mode):
+        bobber_data = vision.find(self, 'fisher', threshold, size_percentage=100, debug_mode=debug_mode)       
         return bobber_data
 
     def cast_fishing_rod(self, key):
-        self.press_key('1') # '1' here indicates the button to be pressed to cast the rod
-        sleep(0.25) # wait for bobber to be in water, before we try to detect it
+        if self.fishing == True:
+            self.press_key('1') # '1' here indicates the button to be pressed to cast the rod
+            sleep(0.25) # wait for bobber to be in water, before we try to detect it
 
     def press_key(self, key_to_press):
         pyautogui.press(key_to_press)            
@@ -34,9 +36,10 @@ class FishBot:
     def apply_lure(self, key):
         if time() >= self.lure_end_time:
             sleep(0.1)
-            self.press_key(key)
-            print("Applying fishing lure")
-            sleep(2.3)
+            if self.fishing == True:
+                self.press_key(key)
+                print("Applying fishing lure")
+                sleep(2.3)
 
             self.lure_end_time += self.lure_duration
 
@@ -52,19 +55,19 @@ class FishBot:
 
         # if we have checked at least one screenshot before
         if len(last_confidences) >= 5:
-            confidence_threshold = (sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2]) * 0.88) # 88% of the avg of the previous confidences
+            confidence_threshold = (sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2]) * 0.92) # percentage of the avg of the previous confidences
             if confidence <= confidence_threshold:
                 # print("confidence dropped from the average", (round((sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2])),2 )),
                 #     "to:", (round(confidence, 2)))            
                 return True
         elif len(last_confidences) >= 3:
-            confidence_threshold = (sum(last_confidences[-3:-1]) / len(last_confidences) * 0.90) # 90% of the avg of the previous confidences
+            confidence_threshold = (sum(last_confidences[-3:-1]) / len(last_confidences[-3:-1]) * 0.92) # percentage of the avg of the previous confidences
             if confidence <= confidence_threshold:
                 # print("confidence dropped from the average", (round((sum(last_confidences[-3:-1]) / len(last_confidences[-3:-1])),2 )),
                 #     "to:", (round(confidence, 2)))            
                 return True
         elif len(last_confidences) >= 1:        
-            confidence_threshold = (sum(last_confidences) / len(last_confidences) * 0.90) # 90% of the avg of the previous confidences
+            confidence_threshold = (sum(last_confidences) / len(last_confidences) * 0.92) # percentage of the avg of the previous confidences
             # if the current confidence is lower than the avg of the last confidences
             # i.e. avg confidence is 0.8, threshold (90%) becomes 0.72, but the confidence is actually 0.7
             # then that means the bobber dipped into the water and we most likely caught a fish
@@ -74,24 +77,19 @@ class FishBot:
                 return True
 
     def reel_in_fish(self):
-        # try:
         # last_pos contains the x and y coordinates of the bobber
         # we subtract 15 pixels from the x and add 20 pixel to the y position,
         # in order to get the center of the bobber for our mouse to click on
         pyautogui.moveTo((self.last_position[0] - 15), (self.last_position[1] - 5), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
         pyautogui.click(button= "right")
         print(f"Fish on hook! \nFish caught so far: {self.fish_count}\n")
-        # except: # in case the coordinates are None
-        #     pass
 
     def emergency_escape(self):
         '''
         Presses keypresses to activate certain abilities that allow the
         character to fly away.
         '''
-        print("Activating EMERGENCY ESCAPE")
-        # self.press_key('h') # presses the 'F6' key to turn character invisible
-        # sleep(random.uniform(0.01, 0.03))        
+        print("Activating EMERGENCY ESCAPE")  
         self.press_key('f6') # presses the 'F6' key to turn character invisible
         sleep(random.uniform(0.01, 0.02))
         self.press_key('f6') # second press allows character to fly
@@ -99,7 +97,7 @@ class FishBot:
 
         with pyautogui.hold('space'): # while holding down 'space' key
             with pyautogui.hold('w'): # while holding down 'w' key
-                sleep(0.01)
+                sleep(0.01) # tiny pause in order not to clog input
                 
                 # slightly drag the mouse to the left, while holding the right mouse button.
                 # this let's the character do a 180 degree turn as it flies away,
@@ -107,17 +105,17 @@ class FishBot:
                 pyautogui.drag(2, 0, 0.12, button='right') 
                 sleep(random.uniform(15, 20))  
 
-    def shut_down(self):      
+    def shut_down(self):
+        print(f"Unable to detect bobber after {self.failed_casts_limit} consecutive tries")   
         print("Shutting down...")
-        cv.destroyAllWindows()
-        quit()   
+        self.fishing = False
 
-    def wait_for_fish(self, threshold, vision_bobber):
+    def wait_for_fish(self, threshold, vision_bobber, debug_mode):
         print('Line is out, waiting for fish to bite..')
         animation = "|/-\\" # loading animation 
         idx = 0
         while(self.fishing):
-            bobber_data = self.detect_bobber(threshold, vision_bobber)
+            bobber_data = self.detect_bobber(threshold, vision_bobber, debug_mode)
 
             print(animation[idx % len(animation)], end="\r") # print a loading animation
             idx += 1     
@@ -147,18 +145,18 @@ class FishBot:
             # update the "previous_confidences" list
             self.last_position = position
             self.previous_confidences.append(confidence) 
-
-        if self.failed_casts >= 10: # if we were unable to detect a bobber 10 times in a row
-            print("Unable to detect bobber after 10 consecutive tries")
+        
+        # if we were unable to detect a bobber more than x times in a row
+        if self.failed_casts >= self.failed_casts_limit: 
             self.shut_down() # shut down the bot
         # a "failed cast", meaning we didn't detect bobber, 
         # only applies if it's the very first screenshot to detect the bobber 
         if self.first_screenshot == True: 
             self.failed_casts += 1
 
-    def start_fishing(self, threshold, vision_bobber):
+    def start_fishing(self, threshold, vision_bobber, debug_mode=False):
         while(self.fishing):
-            # small pauze before we start/after we caught fish
+            # # small pauze before we start/after we caught fish
             sleep(random.uniform(0.3, 2))
 
             self.first_screenshot = True     
@@ -167,7 +165,7 @@ class FishBot:
             self.apply_lure('2') # '2' key is here bound to applying the lure
             self.cast_fishing_rod('1') # and the '1' to casting out the fishing line
 
-            self.wait_for_fish(threshold, vision_bobber) # wait until a fish is caught
+            self.wait_for_fish(threshold, vision_bobber, debug_mode) # wait until a fish is caught
             if self.caught_fish:
                 self.reel_in_fish()
 

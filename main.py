@@ -16,29 +16,23 @@ def countdown():
 
 def detect_objects(vision_bobber, vision_enemy, fish_bot, threshold, size_percentage=100):
     while(fish_bot.fishing):
-        vision_bobber.find(size_percentage, fish_bot, threshold, debug_mode=True)
-        vision_enemy.find_enemy(size_percentage, fish_bot, threshold=0.5, debug_mode=False)
+        vision_bobber.find(fish_bot, 'live feed', threshold, size_percentage, debug_mode=True)
+        vision_enemy.find_enemy(fish_bot, threshold=0.9, size_percentage=100, debug_mode=False)
 
-def detect_enemy(vision_enemy, fish_bot, threshold, size_percentage=100):
-    while(fish_bot.fishing):
-        vision_enemy.find_enemy(size_percentage, fish_bot, threshold, debug_mode=False)
-
-def start_bot(threshold, bobber):
+def start_bot(threshold, bobber, live_feed):
     enemy_frame = 'images/Enemy_frame.png'
-    # addon_error = 'images/Addon_error.png'
 
     vision_bobber = Vision(bobber)
-    # vision_bobber2 = Vision(bobber)
     vision_enemy = Vision(enemy_frame)
-    # vision_error = Vision(addon_error)
 
-    # countdown() # 3,2,1 countdown before starting1
+    countdown() # 3,2,1 countdown before starting
     fish_bot = FishBot()
     
-    t1 = Thread(target=fish_bot.start_fishing, args=(threshold, vision_bobber))
+    t1 = Thread(target=fish_bot.start_fishing, args=(threshold, vision_bobber, False))
     t1.start()
 
-    detect_objects(vision_bobber, vision_enemy, fish_bot, threshold, 50)
+    if live_feed:
+        detect_objects(vision_bobber, vision_enemy, fish_bot, threshold, 50)
 
 if __name__ == "__main__":
-    start_bot(threshold=0.6, bobber='images/wintergrasp_evening2.png')
+    start_bot(threshold=0.55, bobber='images/wintergrasp_evening4.png', live_feed=True)
