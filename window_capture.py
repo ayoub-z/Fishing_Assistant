@@ -45,10 +45,13 @@ class WindowCapture:
         self.offset_y = window_rect[1] + self.cropped_y
 
     def get_screenshot(self):
+        '''
+        Takes a screenshot of the screen with the mss module.
+        '''
         stc = mss.mss()
         scr = stc.grab({
-            'left': self.left,
-            'top': self.top,
+            'left': self.left, # starting position on x angle of the screen
+            'top': self.top, # starting position of y angle
             'width': self.w,
             'height': self.h
         })

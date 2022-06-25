@@ -1,6 +1,4 @@
 import cv2 as cv
-import numpy as np
-import pyautogui
 from window_capture import WindowCapture
 
 class Vision:
@@ -27,18 +25,17 @@ class Vision:
  
     def display_image(self, fish_bot, threshold, size_percentage, cropped_image, max_val, max_loc, window_name):
         '''
-        This function is purely for debugging purposes.
-        A smaller window pops up, displaying what the bot can see.
-        If the bobber is detected, a green triangle is drawn around it
-        and this is displayed inside the smaller window.'''
+        This function is purely to display the bot's vision, for debugging purposes.
+        A smaller window pops up displaying what the bot can see.
+        '''
         if max_val >= threshold: # if the fishing bobber is detected
             x, y = max_loc 
 
-            # determine the center position            
+            # determine the center position of the rectangle around the fishing bobber          
             center_x = x + int(self.bobber_w/2)
             center_y = y + int(self.bobber_h/2)
 
-            output_image = self.draw_rectangle(cropped_image, (center_x, center_y)) # draw triangle around the bobber
+            output_image = self.draw_rectangle(cropped_image, (center_x, center_y)) # draw rectangle around the bobber
             if size_percentage != 100: # if we want to resize the displayed image
                 output_image = self.resize_image(output_image, size_percentage) # resize it
             cv.imshow(window_name, output_image) # display the result
@@ -88,12 +85,9 @@ class Vision:
         # got the exact coordinates through trial and error
         if find_enemy:
             # Calibrated for a 2560/1440 resolution screen
-            cropped_image = screenshot[980 : 1020, 1415 : 1455]  
-            
-            # # Calibrated for a 1920/1080 resolution screen
-            # cropped_image = screenshot[int(h / 1.515) : int(h / 1.44), int(w / 1.78) : int((w / 1.71))]        
+            cropped_image = screenshot[182:220, 561:600]
 
-        # the enemy frame would be around here for our specific in-game UI
+        # This is an example of where the enemy frame would be for our specific in-game UI
         #  ________________________________
         # |                                |
         # |             #Enemy frame       |

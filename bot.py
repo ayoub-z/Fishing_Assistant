@@ -1,25 +1,22 @@
-import cv2 as cv
 import pyautogui
-from window_capture import WindowCapture
-from vision import Vision
 
 import random
 from time import time, sleep
 
 class FishBot:
     fishing = True
-
-    previous_confidences = []
-    last_position = None
-
-    failed_casts = 0
-    first_screenshot = True
-    fish_count = 0
-    caught_fish = False
     fishing_lure = True
+    caught_fish = False
+    last_position = None
+    previous_confidences = []
+    
+    fish_count = 0
+    failed_casts = 0
+    failed_casts_limit = 10
     lure_duration = 600 # seconds
     lure_end_time = time()
-    failed_casts_limit = 10
+
+    bobber_movement_sensitivity = 0.85
 
     def detect_bobber(self, threshold, vision, debug_mode):
         bobber_data = vision.find(self, 'fisher', threshold, size_percentage=100, debug_mode=debug_mode)       
@@ -28,111 +25,122 @@ class FishBot:
     def cast_fishing_rod(self, key):
         if self.fishing == True:
             self.press_key('1') # '1' here indicates the button to be pressed to cast the rod
-            sleep(0.25) # wait for bobber to be in water, before we try to detect it
 
     def press_key(self, key_to_press):
         pyautogui.press(key_to_press)            
 
     def apply_lure(self, key):
+        '''
+        Applies fishing lure if the lure duration ended.
+        This is done with a simple key press'''
         if time() >= self.lure_end_time:
-            sleep(0.1)
-            if self.fishing == True:
-                self.press_key(key)
-                print("Applying fishing lure")
-                sleep(2.3)
-
+            self.press_key(key)
+            print("\nApplying fishing lure\n")
+            sleep(2.3)
+            
             self.lure_end_time += self.lure_duration
+                
 
     def fish_caught(self, confidence, last_confidences):
         '''
-        When fish is caught, the bobber dips. 
-        When bobber dips, we either completely don't recognize it anymore or the confidence drops.
+        When fish is caught, the bobber dips or moves around. 
+        When it dips, we either don't recognize it anymore or the confidence drops by a few percentages.
         So we check for a confidence of None or 
         a confidence that's quite a bit lower compared to the previous ones.
         '''
-        if confidence == None: # if we can't locate the bobber anymore
+        
+        # if we can't locate the bobber anymore, then it most likely dipped in the water and we caught a fish
+        if confidence == None: 
             return True
 
-        # if we have checked at least one screenshot before
+        # In these if statements, the past 5, 3, or 1 confidences are summed up and divided by their amount
+        # to get the average confidence. If the current recorded confidence is lower than this average confidence
+        # multiplied by it's sensitivity (i.e. the threshold), then that means the bobber most likely has moved
+        # significantly and we caught a fish.
         if len(last_confidences) >= 5:
-            confidence_threshold = (sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2]) * 0.92) # percentage of the avg of the previous confidences
-            if confidence <= confidence_threshold:
-                # print("confidence dropped from the average", (round((sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2])),2 )),
-                #     "to:", (round(confidence, 2)))            
+            # the confidence_threshold is the average past couple confidences, times the bobber_movement_sensitivty percentage.
+            # for example, the avg confidence is 1.0. If sensitivity is 0.85 (85%), then the threshold will be 0.85 * 1 = 0.85
+            confidence_threshold = (sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2]) * self.bobber_movement_sensitivity) 
+            if confidence <= confidence_threshold:          
                 return True
+
         elif len(last_confidences) >= 3:
-            confidence_threshold = (sum(last_confidences[-3:-1]) / len(last_confidences[-3:-1]) * 0.92) # percentage of the avg of the previous confidences
-            if confidence <= confidence_threshold:
-                # print("confidence dropped from the average", (round((sum(last_confidences[-3:-1]) / len(last_confidences[-3:-1])),2 )),
-                #     "to:", (round(confidence, 2)))            
+            confidence_threshold = (sum(last_confidences[-3:-1]) / len(last_confidences[-3:-1]) * self.bobber_movement_sensitivity)
+            if confidence <= confidence_threshold:      
                 return True
+
         elif len(last_confidences) >= 1:        
-            confidence_threshold = (sum(last_confidences) / len(last_confidences) * 0.92) # percentage of the avg of the previous confidences
-            # if the current confidence is lower than the avg of the last confidences
-            # i.e. avg confidence is 0.8, threshold (90%) becomes 0.72, but the confidence is actually 0.7
-            # then that means the bobber dipped into the water and we most likely caught a fish
+            confidence_threshold = (sum(last_confidences) / len(last_confidences) * self.bobber_movement_sensitivity)
             if confidence <= confidence_threshold:
-                # print("confidence dropped from the average", (round((sum(last_confidences) / len(last_confidences)),2 )),
-                #     "to:", (round(confidence, 2)))
                 return True
 
     def reel_in_fish(self):
-        # last_pos contains the x and y coordinates of the bobber
-        # we subtract 15 pixels from the x and add 20 pixel to the y position,
-        # in order to get the center of the bobber for our mouse to click on
+        '''
+        This function is called when a fish is caught and we need to click on the bobber to catch it.
+        We use the last recorded position of the bobber as the coordinate to click on.
+        '''
+
+        # last_pos contains the last recorded x and y coordinates of the rectangle around the bobber.
+        # in order to get the center of the bobber for our mouse to click on, we subtract 15 pixels 
+        # from the x and 5 pixel from the y positions
+        print(f"Fish on hook!")        
         pyautogui.moveTo((self.last_position[0] - 15), (self.last_position[1] - 5), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
         pyautogui.click(button= "right")
-        print(f"Fish on hook! \nFish caught so far: {self.fish_count}\n")
+        print(f"Fish caught so far: {self.fish_count}\n")
 
     def emergency_escape(self):
         '''
-        Presses keypresses to activate certain abilities that allow the
-        character to fly away.
+        This function is called when the bot detects it's getting attacked by an enemy.
+        Certain keypresses are then pressed to activate a macro that allows the character to fly away.
+        A macro is simlpy an ingame feature that allows for a sequence of abilities. In this case,
+        it's the ability for the player to turn invisible and the ability for it to turn into a bird.
+        Following that we hold down the "space" and "w" keys to fly up and foward.
+
         '''
         print("Activating EMERGENCY ESCAPE")  
-        self.press_key('f6') # presses the 'F6' key to turn character invisible
-        sleep(random.uniform(0.01, 0.02))
-        self.press_key('f6') # second press allows character to fly
-        sleep(random.uniform(0.01, 0.04))
+        # presses the 'g' key to turn character invisible and again to turn into flight form
+        self.press_key('g')
+        sleep(random.uniform(0.02, 0.05))
+        self.press_key('g')
+        sleep(random.uniform(0.02, 0.05))
 
-        with pyautogui.hold('space'): # while holding down 'space' key
-            with pyautogui.hold('w'): # while holding down 'w' key
-                sleep(0.01) # tiny pause in order not to clog input
+        with pyautogui.hold('space'): # hold down 'space' key
+            with pyautogui.hold('w'): # hold down 'w' key
                 
                 # slightly drag the mouse to the left, while holding the right mouse button.
                 # this let's the character do a 180 degree turn as it flies away,
                 # making it harder for enemy players to keep track of the character
                 pyautogui.drag(2, 0, 0.12, button='right') 
-                sleep(random.uniform(15, 20))  
+                sleep(random.uniform(15, 20)) # sleep the program while it keeps flying away
 
     def shut_down(self):
-        print(f"Unable to detect bobber after {self.failed_casts_limit} consecutive tries")   
         print("Shutting down...")
-        self.fishing = False
+        self.fishing = False # setting the fishing state to False automatically stops the main while loop
 
     def wait_for_fish(self, threshold, vision_bobber, debug_mode):
+        '''
+        When the fishing rod is cast out, keep track of the bobber and wait for it to move.
+        '''
         print('Line is out, waiting for fish to bite..')
         animation = "|/-\\" # loading animation 
         idx = 0
+        failed_first_cast = True
         while(self.fishing):
             bobber_data = self.detect_bobber(threshold, vision_bobber, debug_mode)
+            position, confidence = (None, None)
 
             print(animation[idx % len(animation)], end="\r") # print a loading animation
-            idx += 1     
-            if bobber_data != None: # if we can locate the bobber
-                position, confidence = bobber_data[:2]
-            else:
-                position, confidence = (None, None)
-                if self.first_screenshot == True: # if on the very detection screenshot we were unable to locate the bobber
-                    print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
-                    break
+            idx += 1
 
-            # if on the very first detection screenshot we were unable to locate the bobber
-            if confidence == None and self.first_screenshot == True:
+            if bobber_data != None: # if we can locate the bobber and thus have bobber data
+                position, confidence = bobber_data[:2] # save that data to these variables
+
+            # if on the very first detection screenshot we were unable to locate the bobber,
+            # it means something went wrong and we need to recast the fishing rod
+            elif confidence == None and failed_first_cast == True:
                 print("UH OH!!!. We can't locate the bobber :( \n\nTrying again..\n\n")
                 break
-
-            self.first_screenshot = False
+            failed_first_cast = False
 
             # if we caught a fish
             if self.fish_caught(confidence, self.previous_confidences):
@@ -141,33 +149,37 @@ class FishBot:
                 self.previous_confidences = []              
                 break
 
-            # if we didn't catch a fish, update the last bobber position
+            # if we didn't catch a fish, update the last position of the bobber and
             # update the "previous_confidences" list
             self.last_position = position
             self.previous_confidences.append(confidence) 
-        
-        # if we were unable to detect a bobber more than x times in a row
-        if self.failed_casts >= self.failed_casts_limit: 
-            self.shut_down() # shut down the bot
-        # a "failed cast", meaning we didn't detect bobber, 
-        # only applies if it's the very first screenshot to detect the bobber 
-        if self.first_screenshot == True: 
+
+        # a "failed cast", meaning we didn't detect a bobber, 
+        # only applies if it's on the very first screenshot after we casted out the fishing rod
+        if failed_first_cast == True: 
             self.failed_casts += 1
 
+        # if we were unable to detect a bobber more than x times in a row
+        if self.failed_casts >= self.failed_casts_limit:
+            print(f"Unable to detect bobber after {self.failed_casts_limit} consecutive tries")   
+            self.shut_down() # shut down the bot
+
+
     def start_fishing(self, threshold, vision_bobber, debug_mode=False):
+        '''
+        The main function that starts and handles the entire fishing proces.
+        '''
         while(self.fishing):
             # # small pauze before we start/after we caught fish
-            sleep(random.uniform(0.3, 2))
-
-            self.first_screenshot = True     
+            sleep(random.uniform(0.3, 2))    
             self.caught_fish = False    
 
-            self.apply_lure('2') # '2' key is here bound to applying the lure
+            self.apply_lure('2') # the '2' key here is bound to applying the lure in-game
             self.cast_fishing_rod('1') # and the '1' to casting out the fishing line
+            sleep(random.uniform(0.25, 3)) # wait for bobber to drop in water, before we try to detect it
 
             self.wait_for_fish(threshold, vision_bobber, debug_mode) # wait until a fish is caught
             if self.caught_fish:
                 self.reel_in_fish()
-
-                self.last_position = None
-                self.failed_casts = 0
+                self.last_position = None # reset bobber position
+                self.failed_casts = 0 # reset amount of continuous failed casts
