@@ -25,6 +25,7 @@ class FishBot:
     def cast_fishing_rod(self, key):
         if self.fishing == True:
             self.press_key('1') # '1' here indicates the button to be pressed to cast the rod
+            print('Line is out, waiting for fish to bite..')
 
     def press_key(self, key_to_press):
         pyautogui.press(key_to_press)            
@@ -88,7 +89,7 @@ class FishBot:
         pyautogui.click(button= "right")
         print(f"Fish caught so far: {self.fish_count}\n")
 
-    def emergency_escape(self):
+    def escape_feature(self):
         '''
         This function is called when the bot detects it's getting attacked by an enemy.
         Certain keypresses are then pressed to activate a macro that allows the character to fly away.
@@ -121,7 +122,6 @@ class FishBot:
         '''
         When the fishing rod is cast out, keep track of the bobber and wait for it to move.
         '''
-        print('Line is out, waiting for fish to bite..')
         animation = "|/-\\" # loading animation 
         idx = 0
         failed_first_cast = True
@@ -165,16 +165,19 @@ class FishBot:
             self.shut_down() # shut down the bot
 
 
-    def start_fishing(self, threshold, vision_bobber, debug_mode=False):
+    def start_fishing(self, threshold, vision_bobber, bobber_movement_sensitivty, apply_lure, debug_mode=False):
         '''
         The main function that starts and handles the entire fishing proces.
         '''
+        self.bobber_movement_sensitivty = bobber_movement_sensitivty
+
         while(self.fishing):
             # # small pauze before we start/after we caught fish
             sleep(random.uniform(0.3, 2))    
             self.caught_fish = False    
+            if apply_lure:
+                self.apply_lure('2') # the '2' key here is bound to applying the lure in-game
 
-            self.apply_lure('2') # the '2' key here is bound to applying the lure in-game
             self.cast_fishing_rod('1') # and the '1' to casting out the fishing line
             sleep(random.uniform(0.25, 3)) # wait for bobber to drop in water, before we try to detect it
 

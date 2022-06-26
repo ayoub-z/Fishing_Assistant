@@ -8,6 +8,7 @@ class Vision:
     bobber_w = 0
     bobber_h = 0
     method = None
+    recorded_confidences = []
 
     def __init__(self, bobber_img_path, method=cv.TM_CCOEFF_NORMED):
         # load the image we're trying to match
@@ -56,7 +57,7 @@ class Vision:
                 print('done')
                 quit()
 
-    def find(self, fish_bot, window_name, threshold, size_percentage=100, find_enemy=False, debug_mode=False):
+    def find(self, fish_bot, window_name, threshold, size_percentage=100, find_enemy=False, debug_mode=False, calculate_best_threshold=False):
         win_to_capture = WindowCapture('World of Warcraft')
         w = win_to_capture.w # window height
         h = win_to_capture.h # window width
@@ -89,10 +90,10 @@ class Vision:
 
         # This is an example of where the enemy frame would be for our specific in-game UI
         #  ________________________________
+        # |         ___                    |
+        # |        |___|                   |
+        # |        #Enemy frame            |
         # |                                |
-        # |             #Enemy frame       |
-        # |                   ___          |
-        # |                  |___|         |
         # |                                |
         # |________________________________|
 
@@ -102,6 +103,12 @@ class Vision:
         if debug_mode:
             self.display_image(fish_bot, threshold, size_percentage, cropped_image, max_val, max_loc, window_name)
 
+        if calculate_best_threshold:
+            self.recorded_confidences.append(max_val)
+            print(max_val)
+            if len(self.recorded_confidences) > 50:
+                print(f"Recommended threshold: {round(max(self.recorded_confidences),2) + 0.03}")
+                fish_bot.fishing = False
         # if confidence of how likely we've detected bobber, is higher than the threshold,
         # it means we've found the bobber!
         if max_val >= threshold: 
@@ -120,7 +127,7 @@ class Vision:
             cv.destroyAllWindows()
             print("ENEMY SPOTTED")
             fish_bot.fishing = False
-            fish_bot.emergency_escape()
+            fish_bot.escape_feature()
             quit()
 
     def draw_rectangle(self, haystack_img, rectangle):
