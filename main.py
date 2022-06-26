@@ -17,7 +17,7 @@ def detect_objects(vision_bobber, vision_enemy, fish_bot, threshold, escape_feat
             vision_enemy.find_enemy(fish_bot, threshold=0.95, size_percentage=100, debug_mode=False)
 
 def activate_bot(bobber_image, enemy_frame_image, threshold, bobber_movement_sensitivty,
-                 escape_feature, apply_lure, live_feed, calculate_best_threshold):
+                 escape_feature, runtime, apply_lure, live_feed, calculate_best_threshold):
     '''
     The main function that activates the bot.
     threshold: the threshold of how much the found object needs to match the template object
@@ -36,7 +36,7 @@ def activate_bot(bobber_image, enemy_frame_image, threshold, bobber_movement_sen
 
     if not calculate_best_threshold:
         # create a separate thread for the bot's fishing proces
-        t1 = Thread(target=fish_bot.start_fishing, args=(threshold, vision_bobber, bobber_movement_sensitivty, apply_lure))
+        t1 = Thread(target=fish_bot.start_fishing, args=(threshold, vision_bobber, bobber_movement_sensitivty, runtime, apply_lure))
         t1.start()
 
     # displays a live feed of what the bot sees. (runs on the main thread)
@@ -48,10 +48,12 @@ if __name__ == "__main__":
     bobber_image = 'images/tiny_wg.png'
     enemy_frame_image = 'images/enemy_frame.png' # the enemy frame we're looking for on screen    
 
-    threshold = 0.4 # threshold of how accurately the detected bobber needs to resemble the bobber_image template
     # this is the sensitivty for detecting bobber movement. 
-    # the higher it is, the less bobber movement is required to assume that we've caught a fish
+    # the higher it is, the less bobber movement is required to assume that we've caught a fish.
+    # it is recommended to keep this at 0.85
     bobber_movement_sensitivty = 0.85
+    threshold = 0.4 # threshold of how accurately the detected bobber needs to resemble the bobber_image template    
+    runtime = 20 # bot runtime in minutes
 
     escape_feature = True # allows the bot to detect and escape from enemies
     apply_lure = True
@@ -63,4 +65,4 @@ if __name__ == "__main__":
     calculate_best_threshold = False 
 
     activate_bot(bobber_image, enemy_frame_image, threshold, bobber_movement_sensitivty,
-                 escape_feature, apply_lure, live_feed, calculate_best_threshold)
+                 escape_feature, runtime, apply_lure, live_feed, calculate_best_threshold)

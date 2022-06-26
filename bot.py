@@ -15,6 +15,7 @@ class FishBot:
     failed_casts_limit = 10
     lure_duration = 600 # seconds
     lure_end_time = time()
+    bot_end_time = time()
 
     bobber_movement_sensitivity = 0.85
 
@@ -125,6 +126,7 @@ class FishBot:
         animation = "|/-\\" # loading animation 
         idx = 0
         failed_first_cast = True
+        end_time = time() + 20
         while(self.fishing):
             bobber_data = self.detect_bobber(threshold, vision_bobber, debug_mode)
             position, confidence = (None, None)
@@ -154,6 +156,10 @@ class FishBot:
             self.last_position = position
             self.previous_confidences.append(confidence) 
 
+            if time() >= end_time:
+                print("Maximum wait time exceeded.. \n\nTrying again..\n\n")
+                break
+
         # a "failed cast", meaning we didn't detect a bobber, 
         # only applies if it's on the very first screenshot after we casted out the fishing rod
         if failed_first_cast == True: 
@@ -165,14 +171,22 @@ class FishBot:
             self.shut_down() # shut down the bot
 
 
-    def start_fishing(self, threshold, vision_bobber, bobber_movement_sensitivty, apply_lure, debug_mode=False):
+    def start_fishing(self, threshold, vision_bobber, bobber_movement_sensitivty, runtime, apply_lure, debug_mode=False):
         '''
         The main function that starts and handles the entire fishing proces.
         '''
         self.bobber_movement_sensitivty = bobber_movement_sensitivty
+        self.bot_end_time += (runtime * 60)
+
+        print(f"\nBot will run for {runtime} minutes. Happy fishing :)!")
 
         while(self.fishing):
-            # # small pauze before we start/after we caught fish
+            if time() >= self.bot_end_time:
+                print("Reached end time.")
+                self.shut_down()
+                self.fishing = False
+
+            # small pauze before we start/after we caught fish
             sleep(random.uniform(0.3, 2))    
             self.caught_fish = False    
             if apply_lure:
