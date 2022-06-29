@@ -22,6 +22,7 @@ class Vision:
 
         # 6 methods to choose from:
         # TM_CCOEFF, TM_CCOEFF_NORMED, TM_CCORR, TM_CCORR_NORMED, TM_SQDIFF, TM_SQDIFF_NORMED
+        # TM_CCOEFF_NORMED works very well, so that is what we'll use.
         self.method = method
  
     def display_image(self, fish_bot, threshold, size_percentage, cropped_image, max_val, max_loc, window_name):
@@ -68,6 +69,8 @@ class Vision:
         # The middle box area starts after around a 6th of the window's height, all the way down to the middle of the window. 
         # the width starts after around a 6th of the window's width and is all the way till 5/6th of the entire width
 
+        # for the screenshot's height/width positions, we won't be using exact numbers, but an estimation
+        # by calculating the estimated area. this allows for the program to run on any resolution screen.
         #                        startpoint h : endpoint h,   startpoint w : endpoint w
         cropped_image = screenshot[int(h / 6) : int(h - h / 2), int(w / 6) : int(w - w / 6)]
 
@@ -81,12 +84,13 @@ class Vision:
         # |          Full window           |
         # |________________________________|
 
-        # these coordinates are slightly more complex.
-        # in summary, it's to find a small enemy frame inside the window. 
-        # got the exact coordinates through trial and error
+        # for the enemy frame detection it's not possible to calculate it. 
+        # thus we'll be using exact coordinates that are manually found.
         if find_enemy:
             # Calibrated for a 2560/1440 resolution screen
-            cropped_image = screenshot[182:220, 561:600]
+            # cropped_image = screenshot[182:220, 561:600]
+            # Calibrated for a 1920/1080 resolution screen
+            cropped_image = screenshot[143:180, 423:460]
 
         # This is an example of where the enemy frame would be for our specific in-game UI
         #  ________________________________
@@ -105,10 +109,10 @@ class Vision:
 
         if calculate_best_threshold:
             self.recorded_confidences.append(max_val)
-            print(max_val)
-            if len(self.recorded_confidences) > 50:
-                print(f"Recommended threshold: {round(max(self.recorded_confidences),2) + 0.03}")
+            if len(self.recorded_confidences) > 25:
+                print(f"Recommended threshold: {round(max(self.recorded_confidences) + 0.03, 2)}")
                 fish_bot.fishing = False
+
         # if confidence of how likely we've detected bobber, is higher than the threshold,
         # it means we've found the bobber!
         if max_val >= threshold: 
