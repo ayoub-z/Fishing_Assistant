@@ -17,14 +17,9 @@ class Algorithm:
         # In these if statements, the average of the past confidences is calculated
         # If the current recorded confidence has dropped by more than 15% of the average confidence,
         # then that means the bobber most likely has dipped in the water.       
-        if len(last_confidences) >= 5:
-            confidence_threshold = (sum(last_confidences[-5:]) / 5) * bobber_movement_sensitivity 
-
-            if confidence <= confidence_threshold:          
-                return True            
-        elif len(last_confidences) >= 1:
+        if len(last_confidences) <= 5:
             n = len(last_confidences)
-            confidence_threshold = (sum(last_confidences) / n) * bobber_movement_sensitivity 
+            confidence_threshold = (sum(last_confidences[-n:]) / n) * bobber_movement_sensitivity 
 
             if confidence <= confidence_threshold:          
                 return True
