@@ -2,6 +2,7 @@ import pyautogui
 
 import random
 from time import time, sleep
+from algorithm import Algorithm
 
 class FishBot:
     fishing = True
@@ -41,40 +42,6 @@ class FishBot:
             sleep(2.3)
             
             self.lure_end_time += self.lure_duration
-                
-
-    def fish_caught(self, confidence, last_confidences):
-        '''
-        When fish is caught, the bobber dips or moves around. 
-        When it dips, we either don't recognize it anymore or the confidence drops by a few percentages.
-        So we check for a confidence of None or 
-        a confidence that's quite a bit lower compared to the previous ones.
-        '''
-        
-        # if we can't locate the bobber anymore, then it most likely dipped in the water and we caught a fish
-        if confidence == None: 
-            return True
-
-        # In these if statements, the past 5, 3, or 1 confidences are summed up and divided by their amount
-        # to get the average confidence. If the current recorded confidence is lower than the average confidence,
-        # multiplied by it's sensitivity (i.e. the threshold), then that means the bobber most likely has moved
-        # significantly and we caught a fish.
-        if len(last_confidences) >= 5:
-            # the confidence_threshold is the average past couple confidences, times the bobber_movement_sensitivty percentage.
-            # for example, the avg confidence is 1.0. If sensitivity is 0.85 (85%), then the threshold will be 0.85 * 1 = 0.85
-            confidence_threshold = (sum(last_confidences[-5:-2]) / len(last_confidences[-5:-2]) * self.bobber_movement_sensitivity) 
-            if confidence <= confidence_threshold:          
-                return True
-
-        elif len(last_confidences) >= 3:
-            confidence_threshold = (sum(last_confidences[-3:-1]) / len(last_confidences[-3:-1]) * self.bobber_movement_sensitivity)
-            if confidence <= confidence_threshold:      
-                return True
-
-        elif len(last_confidences) >= 1:        
-            confidence_threshold = (sum(last_confidences) / len(last_confidences) * self.bobber_movement_sensitivity)
-            if confidence <= confidence_threshold:
-                return True
 
     def reel_in_fish(self):
         '''
@@ -145,7 +112,7 @@ class FishBot:
             failed_first_cast = False
 
             # if we caught a fish
-            if self.fish_caught(confidence, self.previous_confidences):
+            if Algorithm.fish_on_line(confidence, self.previous_confidences, self.bobber_movement_sensitivity):
                 self.caught_fish = True
                 self.fish_count += 1  
                 self.previous_confidences = []              
@@ -171,11 +138,11 @@ class FishBot:
             self.shut_down() # shut down the bot
 
 
-    def start_fishing(self, threshold, vision_bobber, bobber_movement_sensitivty, runtime, apply_lure, debug_mode=False):
+    def start_fishing(self, threshold, vision_bobber, bobber_movement_sensitivity, runtime, apply_lure, debug_mode=False):
         '''
         The main function that starts and handles the entire fishing proces.
         '''
-        self.bobber_movement_sensitivty = bobber_movement_sensitivty
+        self.bobber_movement_sensitivity = bobber_movement_sensitivity
         self.bot_end_time += (runtime * 60)
 
         print(f"\nBot will run for {runtime} minutes. Happy fishing :)!")
