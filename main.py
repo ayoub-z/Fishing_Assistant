@@ -41,7 +41,7 @@ def activate_bot(bobber_image, enemy_frame_image, threshold, bobber_movement_sen
 
     # displays a live feed of what the bot sees. (runs on the main thread)
     if live_feed:
-        detect_objects(vision_bobber, vision_enemy, fish_bot, threshold, escape_feature, 
+        detect_objects(vision_bobber, vision_enemy, fish_bot, threshold, escape_feature,
                        calculate_best_threshold, size_percentage=50)
 
 if __name__ == "__main__":
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # the higher it is, the less bobber movement is required to assume that we've caught a fish.
     # it is recommended to keep this at 0.85
     bobber_movement_sensitivty = 0.85
-    threshold = 0.4 # threshold of how accurately the detected bobber needs to resemble the bobber_image template    
+    threshold = 0.45 # threshold of how accurately the detected bobber needs to resemble the bobber_image template    
     runtime = 20 # bot runtime in minutes
 
     escape_feature = True # allows the bot to detect and escape from enemies
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # setting this to TRUE pauses the entire bot. 
     # the game will be monitored and the best threshold will be recommended. 
     # the threshold should generally be between 0.4 and 0.8
-    calculate_best_threshold = False 
+    calculate_best_threshold = False
 
     activate_bot(bobber_image, enemy_frame_image, threshold, bobber_movement_sensitivty,
                  escape_feature, runtime, apply_lure, live_feed, calculate_best_threshold)
