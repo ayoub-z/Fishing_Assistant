@@ -51,7 +51,7 @@ class FishBot:
 
         # last_pos contains the last recorded x and y coordinates of the rectangle around the bobber.
         # in order to get the center of the bobber for our mouse to click on, we subtract 15 pixels 
-        # from the x and 5 pixel from the y positions
+        # from the x and 5 pixel from the y positions.
         print(f"Fish on hook!")        
         pyautogui.moveTo((self.last_position[0] - 15), (self.last_position[1] - 5), duration=random.uniform(0.3, 0.5), tween=pyautogui.easeInOutQuad)
         pyautogui.click(button= "right")
@@ -93,7 +93,7 @@ class FishBot:
         animation = "|/-\\" # loading animation 
         idx = 0
         failed_first_cast = True
-        end_time = time() + 20
+        end_time = time() + 20 # maximum time fish can take to bite, before the cast expires
         while(self.fishing):
             bobber_data = self.detect_bobber(threshold, vision_bobber, debug_mode)
             position, confidence = (None, None)
@@ -123,7 +123,10 @@ class FishBot:
             self.last_position = position
             self.previous_confidences.append(confidence) 
 
-            if time() >= end_time:
+            # when you cast out a line, it only stays in the water for a maximum of 20 seconds.
+            # if we still didn't catch any fish after that period of time, something may have
+            # gone wrong and we need to reset.
+            if time() >= end_time: 
                 print("Maximum wait time exceeded.. \n\nTrying again..\n\n")
                 break
 
@@ -143,7 +146,7 @@ class FishBot:
         The main function that starts and handles the entire fishing proces.
         '''
         self.bobber_movement_sensitivity = bobber_movement_sensitivity
-        self.bot_end_time += (runtime * 60)
+        self.bot_end_time += (runtime * 60) # runtime is in minutes. Multiply it by seconds so we can use time() module
 
         print(f"\nBot will run for {runtime} minutes. Happy fishing :)!")
 

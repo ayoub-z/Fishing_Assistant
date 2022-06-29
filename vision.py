@@ -27,8 +27,9 @@ class Vision:
  
     def display_image(self, fish_bot, threshold, size_percentage, cropped_image, max_val, max_loc, window_name):
         '''
-        This function is purely to display the bot's vision, for debugging purposes.
-        A smaller window pops up displaying what the bot can see.
+        This function has two purposes. 
+        It's used by the bot to analyze the image.
+        It's used for debugging purposes. A smaller window pops up displaying what the bot can see.
         '''
         if max_val >= threshold: # if the fishing bobber is detected
             x, y = max_loc 
@@ -42,7 +43,7 @@ class Vision:
                 output_image = self.resize_image(output_image, size_percentage) # resize it
             cv.imshow(window_name, output_image) # display the result
             cv.setWindowProperty(window_name, cv.WND_PROP_TOPMOST, 1)
-            if cv.waitKey(1) == ord('q'): 
+            if cv.waitKey(1) == ord('q'): # if 'q' is pressed inside the small poppued up window, the bot shuts down
                 cv.destroyAllWindows()
                 fish_bot.fishing = False
                 print('done')
