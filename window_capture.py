@@ -46,7 +46,10 @@ class WindowCapture:
 
     def get_screenshot(self):
         '''
-        Takes a screenshot of the screen with the mss module.
+        Take a screenshot of the screen with the mss module.
+        The mss module is not as fast as the pywin32 module for Windows,
+        however it is able to take simultaneous screenshots, while the pywin32
+        is not. We will be taking simultaneous screenshots while threading.
         '''
         stc = mss.mss()
         scr = stc.grab({
