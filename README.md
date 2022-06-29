@@ -1,3 +1,5 @@
+![](https://github.com/ayoub-z/Eindopdracht_3/blob/main/Poster.png)
+
 ## Demo video
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=81YQVH4vXec
