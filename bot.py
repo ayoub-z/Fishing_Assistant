@@ -56,7 +56,7 @@ class FishBot:
             return True
 
         # In these if statements, the past 5, 3, or 1 confidences are summed up and divided by their amount
-        # to get the average confidence. If the current recorded confidence is lower than this average confidence
+        # to get the average confidence. If the current recorded confidence is lower than the average confidence,
         # multiplied by it's sensitivity (i.e. the threshold), then that means the bobber most likely has moved
         # significantly and we caught a fish.
         if len(last_confidences) >= 5:
@@ -96,7 +96,7 @@ class FishBot:
         Certain keypresses are then pressed to activate a macro that allows the character to fly away.
         A macro is simlpy an ingame feature that allows for a sequence of abilities. In this case,
         it's the ability for the player to turn invisible and the ability for it to turn into a bird.
-        Following that we hold down the "space" and "w" keys to fly up and foward.
+        Following that we hold down the "space" and "w" keys to fly up and foward, while turning around.
 
         '''
         print("Activating EMERGENCY ESCAPE")  
@@ -110,7 +110,7 @@ class FishBot:
             with pyautogui.hold('w'): # hold down 'w' key
                 
                 # slightly drag the mouse to the left, while holding the right mouse button.
-                # this let's the character do a 180 degree turn as it flies away,
+                # this let's the character turn around as it flies away,
                 # making it harder for enemy players to keep track of the character
                 pyautogui.drag(2, 0, 0.12, button='right') 
                 sleep(random.uniform(15, 20)) # sleep the program while it keeps flying away
@@ -186,14 +186,16 @@ class FishBot:
                 self.shut_down()
                 self.fishing = False
 
-            # small pauze before we start/after we caught fish
-            sleep(random.uniform(0.3, 2))    
+            if self.caught_fish:
+                # small pauze after we catch a fish
+                # print("small sleep")
+                sleep(random.uniform(0.3, 2))    
             self.caught_fish = False    
             if apply_lure:
                 self.apply_lure('2') # the '2' key here is bound to applying the lure in-game
 
             self.cast_fishing_rod('1') # and the '1' to casting out the fishing line
-            sleep(random.uniform(0.25, 3)) # wait for bobber to drop in water, before we try to detect it
+            sleep(random.uniform(0.25, 0.3)) # wait for bobber to drop in water, before we try to detect it
 
             self.wait_for_fish(threshold, vision_bobber, debug_mode) # wait until a fish is caught
             if self.caught_fish:
