@@ -1,12 +1,19 @@
-![](https://github.com/ayoub-z/Eindopdracht_3/blob/main/Poster.png)
+<p>
+   <div align="center">
+   <img width="900" src="https://github.com/ayoub-z/Fishing_Assistant/blob/master/Poster.png"></a>
+   </div>
+</p>
 
-## Demo video
+---
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=81YQVH4vXec
-" target="_blank"><img src="http://img.youtube.com/vi/81YQVH4vXec/0.jpg" 
-alt="IMAGE ALT TEXT HERE" width="310" height="240" border="10" /></a>
+## Demo video - Fishbot &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Demo video - Escape feature
 
-
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=Bm_ktmQUGPc
+" target="_blank"><img src="http://img.youtube.com/vi/Bm_ktmQUGPc/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="380" height="285" border="10" /></a>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=hZyNFjJBaTk
+" target="_blank"><img src="http://img.youtube.com/vi/hZyNFjJBaTk/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="380" height="285" border="10" /></a>
 ---
 
 <details open>
