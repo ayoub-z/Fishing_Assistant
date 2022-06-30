@@ -19,7 +19,7 @@ class Algorithm:
         # then that means the bobber most likely has dipped in the water.       
         if len(last_confidences) >= 1:
             n = len(last_confidences)
-            n = 5 if n > 5 else 1 # we don't want more than 5 of the past confidences
+            n = 5 if n > 5 else n # we don't want more than 5 of the past confidences
 
             confidence_threshold = (sum(last_confidences[-n:]) / n) * bobber_movement_sensitivity 
 
